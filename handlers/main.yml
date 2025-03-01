@@ -1,0 +1,21 @@
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Update initramfs
+  command: update-initramfs -u
+
+- name: Reboot after blacklisting nouveau
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+
+- name: Reboot after driver installation
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+
+- name: Restart nvidia-persistenced
+  ansible.builtin.sysvinit:
+    name: nvidia-persistenced
+    state: restarted
+    enabled: true
+

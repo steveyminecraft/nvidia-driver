@@ -1,0 +1,72 @@
+- name: Ensure non-free repositories are enabled
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list
+    regexp: "^(deb .* main)(?! contrib non-free)"
+    replace: "\\1 contrib non-free"
+    backup: true
+  notify: Update apt cache
+
+- name: Blacklist nouveau driver
+  copy:
+    dest: /etc/modprobe.d/blacklist-nouveau.conf
+    content: |
+      blacklist nouveau
+      options nouveau modeset=0
+  notify: 
+    - Update initramfs
+    - Reboot after blacklisting nouveau
+  
+- name: Force reboot for clean installation
+  meta: flush_handlers
+
+- name: Enable 32-bit architecture support
+  command: dpkg --add-architecture i386
+  when: require_32bit_support
+  notify: Update apt cache
+
+- name: Force Update for apt cache
+  meta: flush_handlers
+
+- name: Install pre-required packages
+  ansible.builtin.apt:
+    name:
+      - "linux-headers-{{ ansible_kernel }}"
+      - build-essential
+      - libglvnd-dev
+      - pkg-config
+      - dkms
+    state: present
+
+- name: Install NVIDIA driver
+  block:
+    - name: Install NVIDIA driver package (64-bit)
+      ansible.builtin.apt:
+        name: 
+          - nvidia-driver
+        state: present
+      ignore_errors: yes
+
+    - name: Install NVIDIA driver package (32-bit)
+      ansible.builtin.apt:
+        name: nvidia-driver-libs:i386
+        state: present
+      ignore_errors: yes
+      when: require_32bit_support 
+
+    - name: Fix package issue
+      ansible.builtin.apt:
+        update_cache: yes
+        dpkg_options: --configure -a
+
+- name: Copy nvidia-persistenced init script
+  copy:
+    src: nvidia-persistenced
+    dest: /etc/init.d/nvidia-persistenced
+    mode: '0755'
+  notify:
+    - Update initramfs
+    - Restart nvidia-persistenced
+    - Reboot after driver installation
+
+- name: Force Update for apt cache
+  meta: flush_handlers

@@ -1,0 +1,17 @@
+galaxy_info:
+  role_name: nvidia-driver
+  author: steveyminecraft
+  description: Ansible role to install NVIDIA drivers on Devuan
+  license: MIT
+  min_ansible_version: '2.9'
+  platforms:
+    - name: Devuan
+      versions:
+        - chimaera
+        - daedalus
+  galaxy_tags:
+    - nvidia
+    - devuan
+    - driver
+
+dependencies: []

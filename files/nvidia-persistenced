@@ -1,0 +1,44 @@
+#!/bin/sh -e
+# NVIDIA Persistence Daemon Init Script
+# Copyright (c) 2013 NVIDIA Corporation
+
+NVPD=nvidia-persistenced
+NVPD_BIN=/usr/bin/${NVPD}
+NVPD_RUNTIME=/var/run/${NVPD}
+NVPD_PIDFILE=${NVPD_RUNTIME}/${NVPD}.pid
+NVPD_USER=nvpd
+NVPD_ACTION=${1}
+
+test -x $NVPD_BIN || exit 0
+
+if [ -f ${NVPD_PIDFILE} ]; then
+  read -r NVPD_PID < "${NVPD_PIDFILE}"
+  if [ "${NVPD_PID}" ] && [ -d /proc/${NVPD_PID} ]; then
+    case "${1}" in
+      start) echo "NVIDIA Persistence Daemon already running"; NVPD_ACTION=restart ;;
+    esac
+  else
+    echo "NVIDIA Persistence Daemon, stale PID removed"
+    rm -rf "${NVPD_RUNTIME}"
+  fi
+fi
+
+case "${NVPD_ACTION}" in
+  start)
+    echo "Starting NVIDIA Persistence Daemon"
+    ${NVPD_BIN} --user ${NVPD_USER}
+    ;;
+  stop)
+    echo "Stopping NVIDIA Persistence Daemon"
+    [ ! -z "${NVPD_PID}" ] && kill ${NVPD_PID} &> /dev/null
+    ;;
+  restart)
+    $0 stop
+    sleep 2
+    $0 start
+    ;;
+  *) echo "usage: $0 {start|stop|restart}"
+    ;;
+esac
+
+exit 0
