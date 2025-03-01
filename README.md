@@ -3,7 +3,7 @@
 This role installs NVIDIA drivers on Devuan, supports 32-bit drivers, and optionally replaces the `nvidia-persistenced` init script.
 
 ## Requirements
-- Devuan system without systemd
+- Devuan linux
 - Ansible 2.9+
 
 ## Role Variables
